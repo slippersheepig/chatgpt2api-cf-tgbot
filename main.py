@@ -20,7 +20,7 @@ def get_access_token(host, email, password):
         print('Failed to get access token')
         return None
 
-def push_token_to_cloudflare_worker(cfw_token):
+def push_token_to_cloudflare_worker(access_token):
     cf_api_token = os.getenv('CF_API_TOKEN')
     account_id = os.getenv('CF_ACCOUNT_ID')
     script_name = os.getenv('CF_SCRIPT_NAME')
@@ -34,7 +34,7 @@ def push_token_to_cloudflare_worker(cfw_token):
     # 更新 Cloudflare worker 中的变量
     payload = {
         'vars': {
-            script_variable_name: cfw_token
+            script_variable_name: access_token
         }
     }
         
@@ -58,8 +58,8 @@ def refresh_token_and_push(host, email, password):
     }
     response = requests.post(url, headers=headers)
     if response.status_code == 200:
-        cfw_token = response.json().get('access_token')
-        push_token_to_cloudflare_worker(cfw_token)
+        access_token = response.json().get('access_token')
+        push_token_to_cloudflare_worker(access_token)
     else:
         print('Failed to refresh access token')
 
