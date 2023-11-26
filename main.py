@@ -20,54 +20,59 @@ def get_access_token(host, email, password):
         print('Failed to get access token')
         return None
 
-def refresh_token_and_push(host, cloudflare_worker_url, email, password):
-    access_token = get_access_token(host, email, password)
-    if access_token:
-        url = f'http://{host}/auth/refresh_token'
-        headers = {
-            'Authorization': 'Bearer ' + access_token
-        }
-        response = requests.post(url, headers=headers)
-        if response.status_code == 200:
-            cfw_token = response.json().get('access_token')
-            cf_api_token = os.getenv('CF_API_TOKEN')
-            zone_id = os.getenv('CF_ZONE_ID')
-            script_name = os.getenv('CF_SCRIPT_NAME')
-            script_variable_name = os.getenv('CF_SCRIPT_VARIABLE_NAME')
-            
-            headers = {
-                'Authorization': f'Bearer {cf_api_token}',
-                'Content-Type': 'application/json'
-            }
+def push_token_to_cloudflare_worker(cfw_token):
+    cf_api_token = os.getenv('CF_API_TOKEN')
+    zone_id = os.getenv('CF_ZONE_ID')
+    script_name = os.getenv('CF_SCRIPT_NAME')
+    script_variable_name = os.getenv('CF_SCRIPT_VARIABLE_NAME')
 
-            # 更新 Cloudflare worker 中的变量
-            payload = {
-                'vars': {
-                    script_variable_name: cfw_token
-                }
-            }
-            
-            url = f'https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/scripts/{script_name}/variable'
-            response = requests.put(url, headers=headers, json=payload)
-            
-            if response.status_code == 200:
-                print('Token pushed to Cloudflare worker successfully')
-            else:
-                print('Failed to push token to Cloudflare worker')
-        else:
-            print('Failed to refresh access token')
+    headers = {
+        'Authorization': f'Bearer {cf_api_token}',
+        'Content-Type': 'application/json'
+    }
+
+    # 更新 Cloudflare worker 中的变量
+    payload = {
+        'vars': {
+            script_variable_name: cfw_token
+        }
+    }
+        
+    url = f'https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/scripts/{script_name}/variable'
+    response = requests.put(url, headers=headers, json=payload)
+        
+    if response.status_code == 200:
+        print('Token pushed to Cloudflare worker successfully')
+    else:
+        print('Failed to push token to Cloudflare worker')
+
+def refresh_token_and_push(host, email, password):
+    access_token = get_access_token(host, email, password)
+    if not access_token:
+        print('Failed to get access token')
+        return
+    
+    url = f'http://{host}/auth/refresh_token'
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    response = requests.post(url, headers=headers)
+    if response.status_code == 200:
+        cfw_token = response.json().get('access_token')
+        push_token_to_cloudflare_worker(cfw_token)
+    else:
+        print('Failed to refresh access token')
 
 def main():
     host = os.getenv('HOST')
     email = os.getenv('EMAIL')
     password = os.getenv('PASSWORD')
-    cloudflare_worker_url = os.getenv('CLOUDFLARE_WORKER_URL')
 
-    if not host or not email or not password or not cloudflare_worker_url:
-        print('Please provide HOST, EMAIL, PASSWORD, and CLOUDFLARE_WORKER_URL in the .env file')
+    if not host or not email or not password:
+        print('Please provide HOST, EMAIL, and PASSWORD in the .env file')
         sys.exit(1)
     
-    schedule.every().week.do(refresh_token_and_push, host=host, cloudflare_worker_url=cloudflare_worker_url, email=email, password=password)
+    schedule.every().week.do(refresh_token_and_push, host=host, email=email, password=password)
     
     while True:
         schedule.run_pending()
