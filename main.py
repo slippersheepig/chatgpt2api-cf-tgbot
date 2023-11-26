@@ -22,7 +22,7 @@ def get_access_token(host, email, password):
 
 def push_token_to_cloudflare_worker(cfw_token):
     cf_api_token = os.getenv('CF_API_TOKEN')
-    zone_id = os.getenv('CF_ZONE_ID')
+    account_id = os.getenv('CF_ACCOUNT_ID')
     script_name = os.getenv('CF_SCRIPT_NAME')
     script_variable_name = os.getenv('CF_SCRIPT_VARIABLE_NAME')
 
@@ -38,7 +38,7 @@ def push_token_to_cloudflare_worker(cfw_token):
         }
     }
         
-    url = f'https://api.cloudflare.com/client/v4/zones/{zone_id}/workers/scripts/{script_name}/variable'
+    url = f'https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/scripts/{script_name}/variable'
     response = requests.put(url, headers=headers, json=payload)
         
     if response.status_code == 200:
