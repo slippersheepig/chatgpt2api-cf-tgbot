@@ -77,6 +77,14 @@ def main():
         logging.error('Please provide HOST, EMAIL, and PASSWORD in the .env file')
         sys.exit(1)
 
+    # 获取并推送 access_token
+    access_token = get_access_token(host, email, password)
+    if access_token:
+        push_token_to_cloudflare_worker(access_token)
+    else:
+        logging.error('Failed to get access token')
+
+    # 每周定时刷新并推送 access_token
     schedule.every().week.do(refresh_token_and_push, host=host, email=email, password=password)
 
     while True:
