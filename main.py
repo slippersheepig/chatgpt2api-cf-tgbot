@@ -5,6 +5,7 @@ import time
 import os
 from dotenv import load_dotenv
 import sys
+import urllib.parse
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ def get_access_token(host, email, password):
         'username': email,
         'password': password,
     }
-    response = requests.post(url, data=data)
+    response = requests.post(url, data=urllib.parse.urlencode(data), headers={'Content-Type': 'application/x-www-form-urlencoded'})
     if response.status_code == 200:
         access_token = response.json().get('access_token')
         return access_token
