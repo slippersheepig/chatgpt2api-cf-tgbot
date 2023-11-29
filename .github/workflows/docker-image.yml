@@ -3,7 +3,7 @@ name: ci-proxy
 on:
   push:
     branches:
-      - "main"
+      - "proxy"
 
 jobs:
   docker:
